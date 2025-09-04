@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tliasservice.mapper.EmpMapper">
+    <select id="pageList" resultType="com.tliasservice.pojo.Emp">
+        SELECT emp.*,dept.name AS dept_name
+            FROM emp LEFT JOIN dept
+            ON emp.dept_id=dept.id
+        <where>
+            <if test="name!=null and name!='' ">
+                and emp.name LIKE CONCAT('%',#{name},'%')
+            </if>
+
+            <if test="gender!=null ">
+                and gender=#{gender}
+            </if>
+
+            <if test="begin!=null ">
+                and entry_date &gt;=#{begin}
+            </if>
+
+            <if test="end!=null ">
+                and entry_date &lt;=#{end}
+            </if>
+        </where>
+    </select>
+    
+    <delete id="deleteByIds">
+        DELETE FROM emp WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+                #{id}
+        </foreach>
+    </delete>
+
+<!--    自定义结果集empResultMap-->
+    <resultMap id="empResultMap" type="com.tliasservice.pojo.Emp">
+        <id property="id" column="id" />
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="name" column="name"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="job" column="job"/>
+        <result property="salary" column="salary"/>
+        <result property="image" column="image"/>
+        <result property="entryDate" column="entry_date"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+
+        <collection property="exprList" ofType="com.tliasservice.pojo.EmpExpr">
+            <id property="id" column="ee_id"/>
+            <result property="empId" column="emp_id"/>
+            <result property="begin" column="ee_begin"/>
+            <result property="end" column="ee_end"/>
+            <result property="company" column="ee_company"/>
+            <result property="job" column="ee_job"/>
+        </collection>
+    </resultMap>
+    
+    <select id="getInfo" resultMap="empResultMap">
+        SELECT
+        e.*,
+        ee.id ee_id,
+        ee.emp_id,
+        ee.begin ee_begin,
+        ee.end ee_end,
+        ee.company ee_company,
+        ee.job ee_job
+
+        FROM emp e LEFT JOIN emp_expr ee ON e.id=ee.emp_id
+        where e.id=#{id}
+    </select>
+
+
+    <update id="updateById">
+        update emp
+        <set>
+            <if test="username != null and username != ''">username=#{username},</if>
+            <if test="password  != null and password  != ''">password=#{password},</if>
+            <if test="name != null and name != ''">name=#{name},</if>
+            <if test="gender != null ">gender=#{gender},</if>
+            <if test="phone != null and phone != ''">phone=#{phone},</if>
+            <if test="job != null ">job=#{job},</if>
+            <if test="salary != null ">salary=#{salary},</if>
+            <if test="deptId != null ">dept_id=#{deptId},</if>
+            <if test="entryDate != null ">entry_date=#{entryDate},</if>
+            <if test="image != null and image != ''">image=#{image},</if>
+            <if test="updateTime  != null ">update_time=#{updateTime},</if>
+        </set>
+        where id=#{id}
+    </update>
+
+
+    <select id="countEmpJobData" resultType="java.util.Map">
+        SELECT (CASE job    WHEN 1 THEN '班主任'
+                            WHEN 2 THEN '讲师'
+                            WHEN 3 THEN '学工主管'
+                            WHEN 4 THEN '教研主管'
+                            WHEN 5 THEN '咨询师'
+                            ELSE '其他' END)
+                pos,COUNT(*) total
+        FROM emp GROUP BY job
+        ORDER BY total
+    </select>
+
+    <select id="countEmpGenderData" resultType="java.util.Map">
+        SELECT
+            IF( gender=1,'男','女') as name,
+            COUNT(*) as value
+        FROM emp GROUP BY gender
+    </select>
+</mapper>
